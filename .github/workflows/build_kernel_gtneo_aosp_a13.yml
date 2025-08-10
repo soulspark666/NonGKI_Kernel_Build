@@ -563,9 +563,25 @@ jobs:
         if: env.SUSFS_ENABLE == 'true'
         run: |
           cd $GITHUB_WORKSPACE/device_kernel/
+          apply_patch() {
+            local patch_file="$1"
+            local errlog
+            errlog="$(mktemp)"
+            echo "Applying $patch_file"
+            if ! patch -p1 --no-backup-if-mismatch < "$patch_file" 2>"$errlog"; then
+              echo "::warning::patch returned non-zero for $patch_file"
+            fi
+            if grep -qi 'hunks\? ignored -- saving rejects to file' "$errlog"; then
+              echo "Rejects detected for $patch_file; deleting .rej files..."
+              awk 'BEGIN{IGNORECASE=1}/saving rejects to file/{print $NF}' "$errlog" \
+                | tr -d "'" | xargs -r rm -f || true
+              find . -type f -name '*.rej' -print -delete
+            fi
+            rm -f "$errlog"
+          }
           cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch ./
 
-          patch -p1 --no-backup-if-mismatch < 50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch || true
+          apply_patch 50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch || true
 
           if [[ "${{ env.KERNELSU_NAME }}"  == "KernelSU-Next" ]]; then
             if [[ "${{ env.KERNELSU_SOURCE }}" =~ ".sh" && "${{ env.KERNELSU_BRANCH }}" =~ "susfs" ]]; then
@@ -577,7 +593,7 @@ jobs:
           elif [[ "${{ env.KERNELSU_SUS_PATCH }}" == "true" ]]; then
             cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./${{ env.KERNELSU_NAME }}
             cd ${{ env.KERNELSU_NAME }}
-            patch -p1 --no-backup-if-mismatch < 10_enable_susfs_for_ksu.patch || true
+            apply_patch 10_enable_susfs_for_ksu.patch || true
           fi
 
       - name: Patch Kernel of Re:Kernel
