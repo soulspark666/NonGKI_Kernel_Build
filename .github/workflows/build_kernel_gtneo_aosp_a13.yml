@@ -605,21 +605,37 @@ jobs:
       - name: Updated SUSFS Version
         if: env.SUSFS_ENABLE == 'true' && env.SUSFS_UPDATE == 'true'
         run: |
+          set -Eeuo pipefail
           cd $GITHUB_WORKSPACE/device_kernel/
-
+          apply_patch() {
+            local patch_file="$1"
+            local errlog
+            errlog="$(mktemp)"
+            echo "Applying $patch_file"
+            if ! patch -p1 --no-backup-if-mismatch < "$patch_file" 2>"$errlog"; then
+              echo "::warning::patch returned non-zero for $patch_file"
+            fi
+            if grep -qi 'hunks\? ignored -- saving rejects to file' "$errlog"; then
+              echo "Rejects detected for $patch_file; deleting .rej files..."
+              awk 'BEGIN{IGNORECASE=1}/saving rejects to file/{print $NF}' "$errlog" \
+                | tr -d "'" | xargs -r rm -f || true
+              find . -type f -name '*.rej' -print -delete
+            fi
+            rm -f "$errlog"
+          }
           # Upgrade 1.5.7
           cp /tmp/Patches/Patch/susfs_upgrade_to_157.patch ./
 
-          patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_157.patch || true
+          apply_patch susfs_upgrade_to_157.patch || true
 
           # Upgrade 1.5.8
           if grep -q "CONFIG_KSU" "fs/exec.c"; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch ./
-            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch || true
+            apply_patch susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch || true
             echo "Detected no-kprobe hook, use no-kprobe patch."
           elif [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_158_5.4_kprobe.patch ./
-            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_158_5.4_kprobe.patch || true
+            apply_patch susfs_upgrade_to_158_5.4_kprobe.patch || true
             echo "Cannot detected no-kprobe hook in kernel 5.4, use kprobe patch."
           else
             echo "kernel version<5.4 cannot use kprobe patch."
@@ -630,16 +646,16 @@ jobs:
           # Upgrade 1.5.9
           cp /tmp/Patches/Patch/susfs_upgrade_to_159.patch ./
 
-          patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_159.patch || true
+          apply_patch susfs_upgrade_to_159.patch || true
 
           # Upgrade 1.5.10
           if grep -q "CONFIG_KSU" "fs/exec.c"; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch ./
-            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch || true
+            apply_patch susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch || true
             echo "Detected no-kprobe hook, use no-kprobe patch to update 1.5.10."
           elif [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_1510_5.4_kprobe.patch ./
-            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_1510_5.4_kprobe.patch || true
+            apply_patch susfs_upgrade_to_1510_5.4_kprobe.patch || true
             echo "Cannot detected no-kprobe hook in kernel 5.4, use kprobe patch to update 1.5.10."
           else
             echo "kernel version<5.4 cannot use kprobe patch to update 1.5.10."
@@ -651,7 +667,7 @@ jobs:
           # patch -p1 --no-backup-if-mismatch < [patch_file].patch || true
 
       - name: Patch Debugger
-        if: env.BUILD_DEBUGGER == 'false'
+        if: env.BUILD_DEBUGGER == 'true'
         run: |
           cd $GITHUB_WORKSPACE/device_kernel/
           mapfile -t REJ_FILES < <(find . -type f -name "*.rej")
