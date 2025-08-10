@@ -392,7 +392,7 @@ jobs:
             elif [ "${{ env.KPM_ENABLE }}" == "true" ]; then
                 if [ "${{ env.FIRST_VERSION }}" -lt 5 ] && [ "${{ env.SECOND_VERSION }}" -lt 10 ]; then
                     cp /tmp/Patches/Patch/set_memory_to_49_and_low.patch ./
-                    patch -p1 < set_memory_to_49_and_low.patch || true
+                    patch -p1 --no-backup-if-mismatch < set_memory_to_49_and_low.patch || true
                     echo "Patch set_memory successfully !"
                     echo "If have patch error (.rej), manual fixed it."
                 else
@@ -429,7 +429,7 @@ jobs:
           cd $GITHUB_WORKSPACE/device_kernel
           cd ${{ env.KERNELSU_NAME }}/kernel/kpm
           cp /tmp/Patches/Patch/fix_kpm.patch ./
-          patch -p1 < fix_kpm.patch || true
+          patch -p1 --no-backup-if-mismatch < fix_kpm.patch || true
 
       - name: Patch Kernel for no-kprobe
         run: |
@@ -465,7 +465,7 @@ jobs:
                      bash backport_patches.sh
                      if [ "${{ env.FIRST_VERSION }}" -lt 5 ] && [ "${{ env.SECOND_VERSION }}" -lt 10 ]; then
                          cp /tmp/Patches/Patch/backport_kernel_read_and_kernel_write_to_ksu.patch ./
-                         patch -p1 < backport_kernel_read_and_kernel_write_to_ksu.patch || true
+                         patch -p1 --no-backup-if-mismatch < backport_kernel_read_and_kernel_write_to_ksu.patch || true
                          echo "execuated backport patch kernel_read and kernel_read successfully. If you current kernel version < 4.14, then u maybe manual fixed it."
                      fi
                      echo "execuated backport patch successfully. "
@@ -482,7 +482,7 @@ jobs:
                      bash backport_patches.sh
                      if [ "${{ env.FIRST_VERSION }}" -lt 5 ] && [ "${{ env.SECOND_VERSION }}" -lt 10 ]; then
                          cp /tmp/Patches/Patch/backport_kernel_read_and_kernel_write_to_ksu.patch ./
-                         patch -p1 < backport_kernel_read_and_kernel_write_to_ksu.patch || true
+                         patch -p1 --no-backup-if-mismatch < backport_kernel_read_and_kernel_write_to_ksu.patch || true
                          echo "execuated backport patch kernel_read and kernel_read successfully. If you current kernel version < 4.14, then u maybe manual fixed it."
                      fi
                      echo "execuated backport patch successfully."
@@ -565,7 +565,7 @@ jobs:
           cd $GITHUB_WORKSPACE/device_kernel/
           cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch ./
 
-          patch -p1 < 50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch || true
+          patch -p1 --no-backup-if-mismatch < 50_add_susfs_in_kernel-${{ env.KERNEL_VERSION }}.patch || true
 
           if [[ "${{ env.KERNELSU_NAME }}"  == "KernelSU-Next" ]]; then
             if [[ "${{ env.KERNELSU_SOURCE }}" =~ ".sh" && "${{ env.KERNELSU_BRANCH }}" =~ "susfs" ]]; then
@@ -577,7 +577,7 @@ jobs:
           elif [[ "${{ env.KERNELSU_SUS_PATCH }}" == "true" ]]; then
             cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./${{ env.KERNELSU_NAME }}
             cd ${{ env.KERNELSU_NAME }}
-            patch -p1 < 10_enable_susfs_for_ksu.patch || true
+            patch -p1 --no-backup-if-mismatch < 10_enable_susfs_for_ksu.patch || true
           fi
 
       - name: Patch Kernel of Re:Kernel
@@ -588,7 +588,7 @@ jobs:
 
           if [ -f "$PATCH_FILE" ]; then
             cp /tmp/Patches/Rekernel/rekernel-${{ env.KERNEL_VERSION }}.patch ./
-            patch -p1 < rekernel-${{ env.KERNEL_VERSION }}.patch || true
+            patch -p1 --no-backup-if-mismatch < rekernel-${{ env.KERNEL_VERSION }}.patch || true
             echo "Re:Kernel Patched."
           else
             echo "Your kernel not supported it."
@@ -600,7 +600,7 @@ jobs:
           cd $GITHUB_WORKSPACE/device_kernel/
           cp NonGKI_Kernel_Patches/[patch_folder]/[patch_file].patch ./
 
-          patch -p1 < [patch_file].patch || true
+          patch -p1 --no-backup-if-mismatch < [patch_file].patch || true
 
       - name: Updated SUSFS Version
         if: env.SUSFS_ENABLE == 'true' && env.SUSFS_UPDATE == 'true'
@@ -610,16 +610,16 @@ jobs:
           # Upgrade 1.5.7
           cp /tmp/Patches/Patch/susfs_upgrade_to_157.patch ./
 
-          patch -p1 < susfs_upgrade_to_157.patch || true
+          patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_157.patch || true
 
           # Upgrade 1.5.8
           if grep -q "CONFIG_KSU" "fs/exec.c"; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch ./
-            patch -p1 < susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch || true
+            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_158_${{ env.KERNEL_VERSION }}.patch || true
             echo "Detected no-kprobe hook, use no-kprobe patch."
           elif [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_158_5.4_kprobe.patch ./
-            patch -p1 < susfs_upgrade_to_158_5.4_kprobe.patch || true
+            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_158_5.4_kprobe.patch || true
             echo "Cannot detected no-kprobe hook in kernel 5.4, use kprobe patch."
           else
             echo "kernel version<5.4 cannot use kprobe patch."
@@ -630,16 +630,16 @@ jobs:
           # Upgrade 1.5.9
           cp /tmp/Patches/Patch/susfs_upgrade_to_159.patch ./
 
-          patch -p1 < susfs_upgrade_to_159.patch || true
+          patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_159.patch || true
 
           # Upgrade 1.5.10
           if grep -q "CONFIG_KSU" "fs/exec.c"; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch ./
-            patch -p1 < susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch || true
+            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_1510_${{ env.KERNEL_VERSION }}.patch || true
             echo "Detected no-kprobe hook, use no-kprobe patch to update 1.5.10."
           elif [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
             cp /tmp/Patches/Patch/susfs_upgrade_to_1510_5.4_kprobe.patch ./
-            patch -p1 < susfs_upgrade_to_1510_5.4_kprobe.patch || true
+            patch -p1 --no-backup-if-mismatch < susfs_upgrade_to_1510_5.4_kprobe.patch || true
             echo "Cannot detected no-kprobe hook in kernel 5.4, use kprobe patch to update 1.5.10."
           else
             echo "kernel version<5.4 cannot use kprobe patch to update 1.5.10."
@@ -648,7 +648,7 @@ jobs:
           # Extra SUSFS Patch
           # cp NonGKI_Kernel_Patches/[patch_folder]/[patch_file].patch ./
 
-          # patch -p1 < [patch_file].patch || true
+          # patch -p1 --no-backup-if-mismatch < [patch_file].patch || true
 
       - name: Patch Debugger
         if: env.BUILD_DEBUGGER == 'true'
