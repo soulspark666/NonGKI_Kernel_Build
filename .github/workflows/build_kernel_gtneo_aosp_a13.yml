@@ -651,7 +651,7 @@ jobs:
           # patch -p1 --no-backup-if-mismatch < [patch_file].patch || true
 
       - name: Patch Debugger
-        if: env.BUILD_DEBUGGER == 'true'
+        if: env.BUILD_DEBUGGER == 'false'
         run: |
           cd $GITHUB_WORKSPACE/device_kernel/
           mapfile -t REJ_FILES < <(find . -type f -name "*.rej")
